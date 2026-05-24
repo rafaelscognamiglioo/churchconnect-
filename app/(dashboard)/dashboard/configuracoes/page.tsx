@@ -392,6 +392,19 @@ export default function ConfiguracoesPage() {
                         {logoFile ? logoFile.name : "Escolher arquivo"}
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
                       </label>
+                      {(logoPreview || form.logo_url) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoFile(null);
+                            setLogoPreview(null);
+                            setForm((f) => ({ ...f, logo_url: null }));
+                          }}
+                          className="mt-1 flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          <X className="w-3 h-3" /> Remover foto
+                        </button>
+                      )}
                     </div>
                   </div>
 
