@@ -3,9 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
-  Building2, Bell, Shield, CreditCard, Users, Globe,
-  Upload, Save, CheckCircle2, Zap, Crown, Loader2, X
+  Building2, Bell, Shield, CreditCard,
+  Upload, Save, CheckCircle2, Zap, Crown, Loader2, X,
+  ImageIcon, Link2, Camera
 } from "lucide-react";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 const NOTIF_DEFAULTS = [
@@ -183,6 +185,8 @@ const PLANS = [
 type ChurchData = {
   id: string;
   name: string;
+  slug: string;
+  logo_url: string | null;
   pastor_name: string | null;
   city: string | null;
   state: string | null;
@@ -204,6 +208,9 @@ export default function ConfiguracoesPage() {
   const [upgrading, setUpgrading] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [form, setForm] = useState<Partial<ChurchData>>({});
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const supabase = createSupabaseBrowserClient();
 
@@ -213,7 +220,7 @@ export default function ConfiguracoesPage() {
       if (!user) return;
       const { data } = await supabase
         .from("churches")
-        .select("id, name, pastor_name, city, state, email, phone, website, instagram, description, plan")
+        .select("id, name, slug, logo_url, pastor_name, city, state, email, phone, website, instagram, description, plan")
         .eq("owner_id", user.id)
         .single();
       if (data) {
@@ -225,17 +232,46 @@ export default function ConfiguracoesPage() {
     load();
   }, []);
 
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaveError("");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
 
+    let logoUrl = form.logo_url || null;
+
+    // Upload logo if a new file was selected
+    if (logoFile && church) {
+      setUploadingLogo(true);
+      const ext = logoFile.name.split(".").pop();
+      const path = `${church.id}/logo-${Date.now()}.${ext}`;
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from("church-assets")
+        .upload(path, logoFile, { upsert: true });
+      setUploadingLogo(false);
+      if (uploadError) {
+        setSaveError(`Erro ao enviar logo: ${uploadError.message}`);
+        setSaving(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("church-assets").getPublicUrl(path);
+      logoUrl = urlData.publicUrl;
+    }
+
     let error;
     if (church) {
       // UPDATE existing
       ({ error } = await supabase.from("churches").update({
         name: form.name,
+        slug: form.slug,
+        logo_url: logoUrl,
         pastor_name: form.pastor_name,
         city: form.city,
         state: form.state,
@@ -273,7 +309,9 @@ export default function ConfiguracoesPage() {
     if (error) {
       setSaveError(`Erro ao salvar: ${error.message}`);
     } else {
-      setChurch((c) => c ? { ...c, ...form } as ChurchData : c);
+      setChurch((c) => c ? { ...c, ...form, logo_url: logoUrl } as ChurchData : c);
+      setForm((f) => ({ ...f, logo_url: logoUrl }));
+      setLogoFile(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     }
@@ -327,6 +365,56 @@ export default function ConfiguracoesPage() {
                 <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />)}</div>
               ) : (
                 <>
+                  {/* Logo upload */}
+                  <div className="flex items-center gap-5">
+                    <div className="relative group">
+                      <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                        {logoPreview || form.logo_url ? (
+                          <img
+                            src={logoPreview || form.logo_url!}
+                            alt="Logo"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-white/20" />
+                        )}
+                      </div>
+                      <label className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <Camera className="w-5 h-5 text-white" />
+                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                      </label>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">Logo da Igreja</p>
+                      <p className="text-xs text-white/40 mt-0.5">JPG, PNG ou WebP · Máx. 2MB</p>
+                      <label className="mt-2 inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 cursor-pointer transition-colors">
+                        <Upload className="w-3.5 h-3.5" />
+                        {logoFile ? logoFile.name : "Escolher arquivo"}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Slug / URL personalizada */}
+                  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <label className="block text-sm font-medium text-white/70 mb-1.5 flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5" /> URL pública da Igreja
+                    </label>
+                    <div className="flex items-center gap-0">
+                      <span className="px-3 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-xs text-white/40 whitespace-nowrap">
+                        churchconnect.vercel.app/igrejas/
+                      </span>
+                      <input
+                        type="text"
+                        value={form.slug || ""}
+                        onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
+                        placeholder="minha-igreja"
+                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-r-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 transition-all text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-white/30 mt-1.5">Apenas letras minúsculas, números e hífens</p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       { label: "Nome da Igreja", key: "name", placeholder: "Igreja Graça Viva" },
@@ -369,7 +457,7 @@ export default function ConfiguracoesPage() {
                     <button onClick={handleSave} disabled={saving}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 transition-all text-sm font-bold text-white disabled:opacity-60">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                      {saving ? "Salvando..." : saved ? "Salvo!" : "Salvar"}
+                      {uploadingLogo ? "Enviando logo..." : saving ? "Salvando..." : saved ? "Salvo!" : "Salvar"}
                     </button>
                   </div>
                 </>
