@@ -146,8 +146,8 @@ export default function DashboardPage() {
     },
     {
       label: "Check-ins Hoje",
-      value: "347",
-      change: "+18%",
+      value: "0",
+      change: "em tempo real",
       up: true,
       icon: CheckCircle2,
       color: "from-green-500/20 to-emerald-600/10",
@@ -155,9 +155,9 @@ export default function DashboardPage() {
       iconColor: "text-green-400",
     },
     {
-      label: "Crescimento Mês",
-      value: "+18%",
-      change: "vs mês anterior",
+      label: "Plano Atual",
+      value: loading ? "—" : (data.church?.plan ? data.church.plan.charAt(0).toUpperCase() + data.church.plan.slice(1) : "Starter"),
+      change: "ver planos",
       up: true,
       icon: TrendingUp,
       color: "from-amber-500/20 to-orange-600/10",

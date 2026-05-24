@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: "Como funciona o check-in por QR Code?",
-    a: "Cada participante inscrito recebe um QR Code único por email ou WhatsApp. Na entrada do evento, o responsável escaneia o QR Code com qualquer smartphone e a presença é confirmada instantaneamente no sistema.",
+    a: "Cada participante inscrito recebe um QR Code único por email. Na entrada do evento, o responsável escaneia o QR Code com qualquer smartphone e a presença é confirmada instantaneamente no sistema.",
   },
   {
     q: "Posso personalizar o visual da minha página?",
@@ -32,10 +32,6 @@ const faqs = [
   {
     q: "Funciona para redes de igrejas?",
     a: "Sim! O plano Legacy foi desenvolvido especificamente para redes de igrejas. Você gerencia todas as igrejas da rede a partir de um único painel central, com relatórios consolidados.",
-  },
-  {
-    q: "Vocês integram com WhatsApp?",
-    a: "Sim, oferecemos integração com WhatsApp para envio de confirmações de inscrição, lembretes de eventos, convites e comunicações gerais. Disponível a partir do plano Growth.",
   },
 ];
 

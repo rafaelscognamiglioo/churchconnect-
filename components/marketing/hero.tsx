@@ -91,12 +91,12 @@ export function HeroSection() {
             </span>
           </Link>
 
-          <button className="group inline-flex items-center gap-3 px-8 py-4 text-base font-semibold text-white/80 rounded-2xl border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300">
+          <Link href="/como-funciona" className="group inline-flex items-center gap-3 px-8 py-4 text-base font-semibold text-white/80 rounded-2xl border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300">
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/15 transition-colors">
               <Play className="w-3 h-3 fill-white text-white ml-0.5" />
             </div>
             Ver demonstração
-          </button>
+          </Link>
         </motion.div>
 
         {/* Social proof bar */}
