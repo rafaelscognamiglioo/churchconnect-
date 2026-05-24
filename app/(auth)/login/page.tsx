@@ -154,7 +154,7 @@ function LoginForm() {
                 <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-white/5 accent-violet-500" />
                 Lembrar de mim
               </label>
-              <Link href="#" className="text-violet-400 hover:text-violet-300 transition-colors">
+              <Link href="/esqueci-senha" className="text-violet-400 hover:text-violet-300 transition-colors">
                 Esqueceu a senha?
               </Link>
             </div>
