@@ -26,6 +26,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [churchName, setChurchName] = useState("");
   const [churchCity, setChurchCity] = useState("");
+  const [churchLogo, setChurchLogo] = useState<string | null>(null);
   const [userName, setUserName] = useState("");
   const [userInitials, setUserInitials] = useState("PR");
   const pathname = usePathname();
@@ -39,8 +40,12 @@ export function Sidebar() {
       const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "Pastor";
       setUserName(name.split(" ")[0]);
       setUserInitials(name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase());
-      const { data: church } = await supabase.from("churches").select("name, city").eq("owner_id", user.id).single();
-      if (church) { setChurchName(church.name); setChurchCity(church.city || ""); }
+      const { data: church } = await supabase.from("churches").select("name, city, logo_url").eq("owner_id", user.id).single();
+      if (church) {
+        setChurchName(church.name);
+        setChurchCity(church.city || "");
+        setChurchLogo(church.logo_url || null);
+      }
     }
     load();
   }, []);
@@ -86,8 +91,12 @@ export function Sidebar() {
             className="px-4 py-3 border-b border-white/5 overflow-hidden"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-purple-600/20 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0">
-                {churchName ? churchName.substring(0, 2).toUpperCase() : "IG"}
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-purple-600/20 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0 overflow-hidden">
+                {churchLogo ? (
+                  <img src={churchLogo} alt={churchName} className="w-full h-full object-cover" />
+                ) : (
+                  churchName ? churchName.substring(0, 2).toUpperCase() : "IG"
+                )}
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-semibold text-white truncate">{churchName || "Minha Igreja"}</p>
