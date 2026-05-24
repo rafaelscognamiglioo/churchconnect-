@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, LogOut } from "lucide-react";
+import { Bell, Search, LogOut, Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -10,8 +10,24 @@ export function DashboardHeader() {
   const [userName, setUserName] = useState("");
   const [userInitials, setUserInitials] = useState("PR");
   const [userRole, setUserRole] = useState("Administrador");
+  const [isDark, setIsDark] = useState(true);
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    const dark = stored !== "light";
+    setIsDark(dark);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }, []);
+
+  function toggleTheme() {
+    const next = !isDark;
+    setIsDark(next);
+    const theme = next ? "dark" : "light";
+    localStorage.setItem("theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }
 
   useEffect(() => {
     async function load() {
@@ -41,6 +57,13 @@ export function DashboardHeader() {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
+        <button
+          onClick={toggleTheme}
+          title={isDark ? "Modo claro" : "Modo escuro"}
+          className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"
+        >
+          {isDark ? <Sun className="w-4 h-4 text-white/60" /> : <Moon className="w-4 h-4 text-white/60" />}
+        </button>
         <Link
           href="/dashboard/notificacoes"
           className="relative w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"

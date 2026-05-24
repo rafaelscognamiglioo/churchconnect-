@@ -8,6 +8,132 @@ import {
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
+const NOTIF_DEFAULTS = [
+  { key: "new_registration", label: "Nova inscrição", desc: "Quando alguém se inscreve em um evento" },
+  { key: "new_member", label: "Novo membro", desc: "Quando um novo membro entra" },
+  { key: "weekly_report", label: "Relatório semanal", desc: "Resumo toda segunda-feira" },
+  { key: "event_full", label: "Evento lotado", desc: "Quando atinge 90% da capacidade" },
+  { key: "event_reminder", label: "Lembretes de eventos", desc: "24h antes do início" },
+];
+
+function NotificationsTab() {
+  const stored = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("notif_prefs") || "{}") : {};
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({
+    new_registration: true, new_member: true, weekly_report: true, event_full: true, event_reminder: false,
+    ...stored,
+  });
+
+  function toggle(key: string) {
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    localStorage.setItem("notif_prefs", JSON.stringify(next));
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="font-poppins text-lg font-bold text-white mb-0.5">Notificações</h2>
+        <p className="text-sm text-white/40">Escolha quais alertas deseja receber</p>
+      </div>
+      {NOTIF_DEFAULTS.map((n) => (
+        <div key={n.key} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <div>
+            <p className="text-sm font-semibold text-white">{n.label}</p>
+            <p className="text-xs text-white/40 mt-0.5">{n.desc}</p>
+          </div>
+          <button
+            onClick={() => toggle(n.key)}
+            className={`relative w-12 h-6 rounded-full transition-all duration-200 ${prefs[n.key] ? "bg-violet-600" : "bg-white/10"}`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200 ${prefs[n.key] ? "left-6" : "left-0.5"}`} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const supabase = createSupabaseBrowserClient();
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (pwForm.next !== pwForm.confirm) {
+      setPwMsg({ type: "error", text: "As senhas não coincidem." });
+      return;
+    }
+    if (pwForm.next.length < 6) {
+      setPwMsg({ type: "error", text: "A senha deve ter pelo menos 6 caracteres." });
+      return;
+    }
+    setPwSaving(true);
+    setPwMsg(null);
+    const { error } = await supabase.auth.updateUser({ password: pwForm.next });
+    setPwSaving(false);
+    if (error) {
+      setPwMsg({ type: "error", text: error.message });
+    } else {
+      setPwMsg({ type: "success", text: "Senha alterada com sucesso!" });
+      setPwForm({ current: "", next: "", confirm: "" });
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-poppins text-lg font-bold text-white mb-0.5">Segurança</h2>
+        <p className="text-sm text-white/40">Gerencie sua senha e acesso à conta</p>
+      </div>
+
+      <form onSubmit={handleChangePassword} className="space-y-4 p-5 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+        <h3 className="text-sm font-semibold text-white">Alterar senha</h3>
+        {[
+          { label: "Nova senha", key: "next", placeholder: "Mínimo 6 caracteres" },
+          { label: "Confirmar nova senha", key: "confirm", placeholder: "Repita a nova senha" },
+        ].map((f) => (
+          <div key={f.key}>
+            <label className="block text-xs font-medium text-white/60 mb-1.5">{f.label}</label>
+            <input
+              type="password"
+              placeholder={f.placeholder}
+              value={(pwForm as any)[f.key]}
+              onChange={(e) => setPwForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 text-sm transition-all"
+            />
+          </div>
+        ))}
+        {pwMsg && (
+          <div className={`px-4 py-3 rounded-xl text-sm ${pwMsg.type === "success" ? "bg-green-500/10 border border-green-500/20 text-green-400" : "bg-red-500/10 border border-red-500/20 text-red-400"}`}>
+            {pwMsg.text}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={pwSaving || !pwForm.next || !pwForm.confirm}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-sm font-bold text-white transition-all disabled:opacity-50"
+        >
+          {pwSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+          {pwSaving ? "Salvando..." : "Alterar senha"}
+        </button>
+      </form>
+
+      <div className="p-5 rounded-2xl border border-red-500/20 bg-red-500/5">
+        <h3 className="text-sm font-semibold text-red-400 mb-1">Zona de risco</h3>
+        <p className="text-xs text-white/40 mb-4">Ações irreversíveis. Proceda com cuidado.</p>
+        <button
+          onClick={() => alert("Para excluir sua conta, entre em contato com o suporte.")}
+          className="px-4 py-2 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm font-medium transition-all"
+        >
+          Excluir conta
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const tabs = [
   { id: "church", label: "Igreja", icon: Building2 },
   { id: "billing", label: "Plano", icon: CreditCard },
@@ -324,33 +450,11 @@ export default function ConfiguracoesPage() {
 
           {/* Notifications Tab */}
           {activeTab === "notifications" && (
-            <div className="space-y-4">
-              <h2 className="font-poppins text-lg font-bold text-white">Notificações</h2>
-              {[
-                { label: "Nova inscrição", desc: "Quando alguém se inscreve em um evento", on: true },
-                { label: "Novo membro", desc: "Quando um novo membro entra", on: true },
-                { label: "Relatório semanal", desc: "Resumo toda segunda-feira", on: true },
-                { label: "Evento lotado", desc: "Quando atinge 90% da capacidade", on: true },
-                { label: "Lembretes de eventos", desc: "24h antes do início", on: false },
-              ].map((n, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{n.label}</p>
-                    <p className="text-xs text-white/40 mt-0.5">{n.desc}</p>
-                  </div>
-                  <div className={`relative w-12 h-6 rounded-full cursor-pointer transition-all ${n.on ? "bg-violet-600" : "bg-white/10"}`}>
-                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${n.on ? "left-6" : "left-0.5"}`} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NotificationsTab />
           )}
 
           {activeTab === "security" && (
-            <div className="text-center py-12">
-              <Shield className="w-8 h-8 mx-auto mb-3 text-white/20" />
-              <p className="text-white/40 text-sm">Configurações de segurança em breve</p>
-            </div>
+            <SecurityTab />
           )}
         </motion.div>
       </div>
