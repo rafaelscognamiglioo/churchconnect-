@@ -64,32 +64,6 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
-  /* Light theme overrides for dashboard */
-  [data-theme="light"] .dashboard-bg {
-    background-color: #f1f0ff !important;
-  }
-  [data-theme="light"] .dashboard-sidebar {
-    background-color: #ffffff !important;
-    border-color: #e2e8f0 !important;
-  }
-  [data-theme="light"] .dashboard-header {
-    background-color: rgba(255,255,255,0.9) !important;
-    border-color: #e2e8f0 !important;
-  }
-  [data-theme="light"] .text-white { color: #1e1b4b !important; }
-  [data-theme="light"] .text-white\/40, [data-theme="light"] .text-white\/50,
-  [data-theme="light"] .text-white\/60, [data-theme="light"] .text-white\/70 {
-    color: #6b7280 !important;
-  }
-  [data-theme="light"] .bg-white\/\[0\.03\], [data-theme="light"] .bg-white\/\[0\.02\] {
-    background-color: #ffffff !important;
-  }
-  [data-theme="light"] .border-white\/\[0\.07\], [data-theme="light"] .border-white\/\[0\.08\],
-  [data-theme="light"] .border-white\/\[0\.06\] {
-    border-color: #e2e8f0 !important;
-  }
-  [data-theme="light"] .bg-white\/5 { background-color: #f8fafc !important; }
-  [data-theme="light"] .border-white\/10 { border-color: #cbd5e1 !important; }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-poppins;
