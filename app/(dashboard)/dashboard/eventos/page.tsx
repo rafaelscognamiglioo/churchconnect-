@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Plus, Search, Calendar, MapPin, Users,
-  MoreHorizontal, Eye, Edit, Trash2, Loader2
+  MoreHorizontal, Eye, Trash2, Loader2
 } from "lucide-react";
 import { EVENT_CATEGORIES } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -192,9 +192,6 @@ export default function EventosPage() {
                         <div className="absolute right-0 bottom-8 w-44 bg-[#0d0d1f] border border-white/10 rounded-xl overflow-hidden shadow-xl z-10">
                           <Link href={`/dashboard/eventos/${event.id}`} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-colors">
                             <Eye className="w-3.5 h-3.5" /> Gerenciar
-                          </Link>
-                          <Link href={`/dashboard/eventos/${event.id}/editar`} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-colors">
-                            <Edit className="w-3.5 h-3.5" /> Editar
                           </Link>
                           <button
                             onClick={() => handleDelete(event.id)}

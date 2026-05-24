@@ -92,18 +92,22 @@ export default function MembrosPage() {
     e.preventDefault();
     if (!churchId || !form.name || !form.email) return;
     setSaving(true);
-    await supabase.from("members").insert({
+    const { error } = await supabase.from("members").insert({
       church_id: churchId,
+      user_id: null,
       name: form.name,
       email: form.email,
       phone: form.phone || null,
       role: form.role,
       is_active: true,
-      joined_at: new Date().toISOString(),
     });
+    setSaving(false);
+    if (error) {
+      alert(`Erro ao salvar membro: ${error.message}`);
+      return;
+    }
     setForm({ name: "", email: "", phone: "", role: "membro" });
     setShowAdd(false);
-    setSaving(false);
     await load();
   }
 
