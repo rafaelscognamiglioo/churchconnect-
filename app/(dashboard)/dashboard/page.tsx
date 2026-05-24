@@ -6,6 +6,7 @@ import {
   Users, Calendar, CheckCircle2, TrendingUp, ArrowUpRight,
   Bell, QrCode, Clock, MapPin, ChevronRight, Plus
 } from "lucide-react";
+
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar
@@ -13,24 +14,8 @@ import {
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
-const memberGrowthData = [
-  { month: "Jan", membros: 980 },
-  { month: "Fev", membros: 1020 },
-  { month: "Mar", membros: 1085 },
-  { month: "Abr", membros: 1130 },
-  { month: "Mai", membros: 1198 },
-  { month: "Jun", membros: 1248 },
-];
-
-const checkinsData = [
-  { day: "Seg", value: 45 },
-  { day: "Ter", value: 62 },
-  { day: "Qua", value: 88 },
-  { day: "Qui", value: 71 },
-  { day: "Sex", value: 95 },
-  { day: "Sáb", value: 190 },
-  { day: "Dom", value: 347 },
-];
+const DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const emptyCheckinsData = DAYS.map((day) => ({ day, value: 0 }));
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -212,7 +197,7 @@ export default function DashboardPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Area chart */}
+        {/* Member growth chart */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -222,30 +207,40 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-white">Crescimento de Membros</h3>
-              <p className="text-xs text-white/40">Últimos 6 meses</p>
+              <p className="text-xs text-white/40">Total atual</p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-              ↑ 31.4% no período
+            <span className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+              {loading ? "—" : `${data.memberCount} membros`}
             </span>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={memberGrowthData}>
-              <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="month" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="membros" stroke="#7c3aed" strokeWidth={2} fill="url(#grad)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {!loading && data.memberCount === 0 ? (
+            <div className="h-[200px] flex flex-col items-center justify-center text-white/20">
+              <Users className="w-8 h-8 mb-2" />
+              <p className="text-xs">Nenhum membro cadastrado ainda</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={[
+                { mes: "Início", membros: 0 },
+                { mes: "Hoje", membros: data.memberCount },
+              ]}>
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="mes" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="membros" stroke="#7c3aed" strokeWidth={2} fill="url(#grad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
-        {/* Bar chart */}
+        {/* Check-ins chart */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -254,10 +249,10 @@ export default function DashboardPage() {
         >
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-white">Check-ins da Semana</h3>
-            <p className="text-xs text-white/40">Última semana</p>
+            <p className="text-xs text-white/40">Dados em tempo real</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={checkinsData} barSize={22}>
+            <BarChart data={emptyCheckinsData} barSize={22}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -331,22 +326,9 @@ export default function DashboardPage() {
           className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
         >
           <h3 className="text-sm font-semibold text-white mb-4">Atividades Recentes</h3>
-          <div className="space-y-3">
-            {[
-              { icon: CheckCircle2, color: "text-green-400 bg-green-500/10 border-green-500/20", text: "João Silva fez check-in no Culto", time: "2 min" },
-              { icon: Users, color: "text-violet-400 bg-violet-500/10 border-violet-500/20", text: "3 novos membros cadastrados", time: "1h" },
-              { icon: Calendar, color: "text-blue-400 bg-blue-500/10 border-blue-500/20", text: "Retiro Espiritual atingiu 80% de lotação", time: "3h" },
-              { icon: Bell, color: "text-amber-400 bg-amber-500/10 border-amber-500/20", text: "Comunicado enviado para 1.248 membros", time: "5h" },
-              { icon: QrCode, color: "text-pink-400 bg-pink-500/10 border-pink-500/20", text: "Check-in encerrado — Célula de Jovens", time: "8h" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${item.color}`}>
-                  <item.icon className="w-3.5 h-3.5" />
-                </div>
-                <p className="text-xs text-white/60 flex-1">{item.text}</p>
-                <span className="text-[10px] text-white/25 shrink-0">{item.time}</span>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center h-40 text-white/20">
+            <Bell className="w-8 h-8 mb-2" />
+            <p className="text-xs text-center">Nenhuma atividade recente.<br />As ações aparecerão aqui.</p>
           </div>
         </motion.div>
       </div>

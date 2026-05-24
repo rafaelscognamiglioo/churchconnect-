@@ -76,6 +76,7 @@ export default function ConfiguracoesPage() {
   const [saved, setSaved] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<string | null>(null);
   const [upgrading, setUpgrading] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [form, setForm] = useState<Partial<ChurchData>>({});
 
   const supabase = createSupabaseBrowserClient();
@@ -101,7 +102,8 @@ export default function ConfiguracoesPage() {
   async function handleSave() {
     if (!church) return;
     setSaving(true);
-    await supabase.from("churches").update({
+    setSaveError("");
+    const { error } = await supabase.from("churches").update({
       name: form.name,
       pastor_name: form.pastor_name,
       city: form.city,
@@ -113,8 +115,13 @@ export default function ConfiguracoesPage() {
       description: form.description,
     }).eq("id", church.id);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (error) {
+      setSaveError(`Erro ao salvar: ${error.message}. Verifique as permissões no Supabase (RLS).`);
+    } else {
+      setChurch((c) => c ? { ...c, ...form } as ChurchData : c);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   }
 
   async function handleUpgrade(planId: string) {
@@ -198,6 +205,11 @@ export default function ConfiguracoesPage() {
                       className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 transition-all text-sm resize-none"
                     />
                   </div>
+                  {saveError && (
+                    <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                      {saveError}
+                    </div>
+                  )}
                   <div className="flex justify-end">
                     <button onClick={handleSave} disabled={saving}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 transition-all text-sm font-bold text-white disabled:opacity-60">

@@ -6,7 +6,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Chrome } from "lucide-react";
+import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 function LoginForm() {
@@ -36,13 +36,6 @@ function LoginForm() {
     const redirect = searchParams.get("redirect") || "/dashboard";
     router.push(redirect);
     router.refresh();
-  };
-
-  const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    });
   };
 
   return (
@@ -111,23 +104,6 @@ function LoginForm() {
 
           <h1 className="font-poppins text-3xl font-black text-white mb-2">Entrar</h1>
           <p className="text-white/50 mb-8">Acesse sua conta ChurchConnect</p>
-
-          <button
-            onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-medium text-white mb-6"
-          >
-            <Chrome className="w-5 h-5" />
-            Continuar com Google
-          </button>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-[#080812] px-4 text-xs text-white/30">ou continue com email</span>
-            </div>
-          </div>
 
           {error && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">

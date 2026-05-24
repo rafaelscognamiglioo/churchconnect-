@@ -33,6 +33,7 @@ export default function NovoEventoPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  const [sameDay, setSameDay] = useState(true);
   const [form, setForm] = useState({
     title: "",
     category: "culto",
@@ -52,7 +53,11 @@ export default function NovoEventoPage() {
     status: "published",
   });
 
-  const set = (key: string, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: string, value: unknown) => setForm((f) => {
+    const next = { ...f, [key]: value };
+    if (key === "start_date" && sameDay) next.end_date = value as string;
+    return next;
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,14 +68,14 @@ export default function NovoEventoPage() {
     if (!user) { router.push("/login"); return; }
 
     // Get church
-    const { data: church } = await supabase
+    const { data: church, error: churchError } = await supabase
       .from("churches")
       .select("id")
       .eq("owner_id", user.id)
       .single();
 
     if (!church) {
-      setError("Igreja não encontrada. Complete o cadastro primeiro.");
+      setError(`Igreja não encontrada. ${churchError?.message || "Verifique se o cadastro foi concluído e as permissões do Supabase (RLS) estão configuradas."}`);
       setLoading(false);
       return;
     }
@@ -193,17 +198,43 @@ export default function NovoEventoPage() {
               <input required type="time" value={form.start_time} onChange={(e) => set("start_time", e.target.value)}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500/50 text-sm transition-all" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-white/60 mb-1.5">Data fim</label>
-              <input type="date" value={form.end_date} onChange={(e) => set("end_date", e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500/50 text-sm transition-all" />
+          </div>
+
+          <label className="flex items-center gap-2.5 cursor-pointer w-fit">
+            <div
+              onClick={() => {
+                const next = !sameDay;
+                setSameDay(next);
+                if (next) set("end_date", form.start_date);
+              }}
+              className={cn("w-9 h-5 rounded-full transition-colors relative shrink-0", sameDay ? "bg-violet-600" : "bg-white/10")}
+            >
+              <div className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform", sameDay ? "translate-x-4" : "translate-x-0.5")} />
             </div>
+            <span className="text-sm text-white/60">Evento termina no mesmo dia</span>
+          </label>
+
+          {!sameDay && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-white/60 mb-1.5">Data fim</label>
+                <input type="date" value={form.end_date} onChange={(e) => set("end_date", e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500/50 text-sm transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/60 mb-1.5">Hora fim</label>
+                <input type="time" value={form.end_time} onChange={(e) => set("end_time", e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500/50 text-sm transition-all" />
+              </div>
+            </div>
+          )}
+          {sameDay && (
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1.5">Hora fim</label>
               <input type="time" value={form.end_time} onChange={(e) => set("end_time", e.target.value)}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500/50 text-sm transition-all" />
             </div>
-          </div>
+          )}
         </div>
 
         {/* Location */}

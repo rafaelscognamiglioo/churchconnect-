@@ -3,7 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import {
-  Calendar, Users, QrCode, BarChart3, Bell, MessageSquare,
+  Calendar, Users, QrCode, BarChart3, Bell,
   Shield, Smartphone, Zap, Globe, CheckCircle2, ArrowRight
 } from "lucide-react";
 
@@ -41,12 +41,12 @@ const features = [
     items: ["Gráficos interativos", "Relatórios mensais", "Métricas de crescimento", "Export PDF/Excel"],
   },
   {
-    icon: MessageSquare,
-    title: "WhatsApp Automático",
-    description: "Envie confirmações, lembretes e convites automaticamente via WhatsApp para seus membros.",
+    icon: Bell,
+    title: "Comunicados",
+    description: "Envie comunicados, lembretes e avisos por e-mail para todos os membros da sua comunidade.",
     color: "from-pink-500 to-rose-600",
     glow: "pink",
-    items: ["Confirmação automática", "Lembrete 24h antes", "Convite com link", "Mensagens personalizadas"],
+    items: ["E-mail em massa", "Lembrete 24h antes", "Segmentação por grupo", "Histórico de envios"],
   },
   {
     icon: Globe,
@@ -193,7 +193,7 @@ export function FeaturesSection() {
               <span className="text-gradient">em um só lugar.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
-              Do cadastro de membros ao check-in inteligente. Do analytics ao WhatsApp automático.
+              Do cadastro de membros ao check-in inteligente. Do analytics aos comunicados por e-mail.
               O ChurchConnect é o ecossistema completo da sua comunidade.
             </p>
           </motion.div>
