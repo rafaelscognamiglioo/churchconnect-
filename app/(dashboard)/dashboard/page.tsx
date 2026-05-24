@@ -112,22 +112,24 @@ export default function DashboardPage() {
     {
       label: "Total de Membros",
       value: loading ? "—" : data.memberCount.toLocaleString("pt-BR"),
-      change: "+12%",
+      change: loading ? "—" : `${data.memberCount} total`,
       up: true,
       icon: Users,
       color: "from-violet-500/20 to-purple-600/10",
       border: "border-violet-500/20",
       iconColor: "text-violet-400",
+      link: null,
     },
     {
       label: "Eventos Ativos",
       value: loading ? "—" : String(data.eventCount),
-      change: "+3",
+      change: "publicados",
       up: true,
       icon: Calendar,
       color: "from-blue-500/20 to-cyan-600/10",
       border: "border-blue-500/20",
       iconColor: "text-blue-400",
+      link: null,
     },
     {
       label: "Check-ins Hoje",
@@ -138,16 +140,18 @@ export default function DashboardPage() {
       color: "from-green-500/20 to-emerald-600/10",
       border: "border-green-500/20",
       iconColor: "text-green-400",
+      link: null,
     },
     {
       label: "Plano Atual",
       value: loading ? "—" : (data.church?.plan ? data.church.plan.charAt(0).toUpperCase() + data.church.plan.slice(1) : "Starter"),
-      change: "ver planos",
+      change: "ver planos →",
       up: true,
       icon: TrendingUp,
       color: "from-amber-500/20 to-orange-600/10",
       border: "border-amber-500/20",
       iconColor: "text-amber-400",
+      link: "/dashboard/configuracoes",
     },
   ];
 
@@ -174,25 +178,42 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className={`relative p-5 rounded-2xl bg-gradient-to-br ${stat.color} border ${stat.border} overflow-hidden`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-              <span className={`flex items-center gap-0.5 text-xs font-medium ${stat.up ? "text-green-400" : "text-red-400"}`}>
-                <ArrowUpRight className="w-3 h-3" />
-                {stat.change}
-              </span>
-            </div>
-            <p className="text-2xl font-black text-white">{stat.value}</p>
-            <p className="text-xs text-white/50 mt-0.5">{stat.label}</p>
-          </motion.div>
-        ))}
+        {stats.map((stat, i) => {
+          const inner = (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                <span className={`flex items-center gap-0.5 text-xs font-medium ${stat.link ? "text-amber-400 hover:text-amber-300" : "text-white/40"}`}>
+                  {stat.change}
+                </span>
+              </div>
+              <p className="text-2xl font-black text-white">{stat.value}</p>
+              <p className="text-xs text-white/50 mt-0.5">{stat.label}</p>
+            </>
+          );
+          return stat.link ? (
+            <Link key={stat.label} href={stat.link}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`relative p-5 rounded-2xl bg-gradient-to-br ${stat.color} border ${stat.border} overflow-hidden cursor-pointer hover:opacity-90 transition-opacity`}
+              >
+                {inner}
+              </motion.div>
+            </Link>
+          ) : (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className={`relative p-5 rounded-2xl bg-gradient-to-br ${stat.color} border ${stat.border} overflow-hidden`}
+            >
+              {inner}
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Charts */}

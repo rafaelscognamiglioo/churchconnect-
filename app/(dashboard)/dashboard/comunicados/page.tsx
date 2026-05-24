@@ -1,39 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Megaphone, Plus, Send, Users, Bell, Mail, X, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const mockComunicados = [
-  {
-    id: "1",
-    title: "Culto especial de aniversário da Igreja",
-    message: "Neste domingo teremos um culto especial em comemoração ao aniversário da nossa comunidade. Convidamos todos os membros!",
-    type: "announcement",
-    sent_at: "2025-05-22T10:00:00",
-    recipients: 1248,
-    read_count: 847,
-  },
-  {
-    id: "2",
-    title: "Lembrete: Retiro Espiritual 2025",
-    message: "Restam apenas 15 vagas para o Retiro Espiritual. Faça sua inscrição até sexta-feira.",
-    type: "reminder",
-    sent_at: "2025-05-20T14:30:00",
-    recipients: 300,
-    read_count: 212,
-  },
-  {
-    id: "3",
-    title: "Novo membro: Bem-vindos!",
-    message: "Recebemos com alegria 8 novos membros esta semana. Que Deus abençoe cada um!",
-    type: "welcome",
-    sent_at: "2025-05-18T09:00:00",
-    recipients: 1248,
-    read_count: 634,
-  },
-];
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 const typeConfig: Record<string, { label: string; color: string; bg: string; icon: typeof Bell }> = {
   announcement: { label: "Anúncio", color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20", icon: Megaphone },
@@ -45,15 +16,60 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+type Comunicado = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  sent_at: string;
+  recipients: number;
+  read_count: number;
+};
+
 export default function ComunicadosPage() {
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ title: "", message: "", type: "announcement", channel: "push" });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [comunicados, setComunicados] = useState<Comunicado[]>([]);
+  const [memberCount, setMemberCount] = useState(0);
+  const supabase = createSupabaseBrowserClient();
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: church } = await supabase.from("churches").select("id").eq("owner_id", user.id).single();
+      if (!church) return;
+      const [membersRes, comunicadosRes] = await Promise.all([
+        supabase.from("members").select("id", { count: "exact", head: true }).eq("church_id", church.id).eq("is_active", true),
+        supabase.from("comunicados").select("*").eq("church_id", church.id).order("sent_at", { ascending: false }).limit(20),
+      ]);
+      setMemberCount(membersRes.count || 0);
+      setComunicados(comunicadosRes.data || []);
+    }
+    load();
+  }, []);
 
   const handleSend = async () => {
     setSending(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: church } = await supabase.from("churches").select("id").eq("owner_id", user.id).single();
+      if (church) {
+        const { data: newCom } = await supabase.from("comunicados").insert({
+          church_id: church.id,
+          title: form.title,
+          message: form.message,
+          type: form.type,
+          channel: form.channel,
+          recipients: memberCount,
+          read_count: 0,
+          sent_at: new Date().toISOString(),
+        }).select().single();
+        if (newCom) setComunicados((prev) => [newCom, ...prev]);
+      }
+    }
     setSending(false);
     setSent(true);
     setTimeout(() => { setSent(false); setShowNew(false); setForm({ title: "", message: "", type: "announcement", channel: "push" }); }, 2000);
@@ -79,8 +95,8 @@ export default function ComunicadosPage() {
       {/* Channels */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: Bell, label: "Push", desc: "App e navegador", count: "1.248" },
-          { icon: Mail, label: "Email", desc: "Caixa de entrada", count: "987" },
+          { icon: Bell, label: "Push", desc: "App e navegador", count: memberCount.toLocaleString("pt-BR") },
+          { icon: Mail, label: "Email", desc: "Caixa de entrada", count: memberCount.toLocaleString("pt-BR") },
         ].map((ch) => (
           <div key={ch.label} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
@@ -97,8 +113,14 @@ export default function ComunicadosPage() {
       {/* History */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Histórico</h2>
-        {mockComunicados.map((c, i) => {
-          const cfg = typeConfig[c.type];
+        {comunicados.length === 0 ? (
+          <div className="text-center py-14 text-white/20">
+            <Megaphone className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">Nenhum comunicado enviado ainda.</p>
+            <p className="text-xs mt-1">Clique em "Novo Comunicado" para começar.</p>
+          </div>
+        ) : comunicados.map((c, i) => {
+          const cfg = typeConfig[c.type] || typeConfig.announcement;
           const Icon = cfg.icon;
           return (
             <motion.div
@@ -122,7 +144,6 @@ export default function ComunicadosPage() {
                   <p className="text-xs text-white/50 line-clamp-2 mb-3">{c.message}</p>
                   <div className="flex items-center gap-4 text-xs text-white/30">
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.recipients} destinatários</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-green-500/60" />{c.read_count} lidos ({Math.round((c.read_count / c.recipients) * 100)}%)</span>
                     <span>{formatDate(c.sent_at)}</span>
                   </div>
                 </div>

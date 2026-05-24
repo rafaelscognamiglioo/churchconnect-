@@ -100,23 +100,52 @@ export default function ConfiguracoesPage() {
   }, []);
 
   async function handleSave() {
-    if (!church) return;
     setSaving(true);
     setSaveError("");
-    const { error } = await supabase.from("churches").update({
-      name: form.name,
-      pastor_name: form.pastor_name,
-      city: form.city,
-      state: form.state,
-      email: form.email,
-      phone: form.phone,
-      website: form.website,
-      instagram: form.instagram,
-      description: form.description,
-    }).eq("id", church.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+
+    let error;
+    if (church) {
+      // UPDATE existing
+      ({ error } = await supabase.from("churches").update({
+        name: form.name,
+        pastor_name: form.pastor_name,
+        city: form.city,
+        state: form.state,
+        email: form.email,
+        phone: form.phone,
+        website: form.website,
+        instagram: form.instagram,
+        description: form.description,
+      }).eq("id", church.id));
+    } else {
+      // INSERT new church if it doesn't exist yet
+      const slug = (form.name || "minha-igreja")
+        .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")
+        + "-" + Date.now();
+      const { data: newChurch, error: insertError } = await supabase.from("churches").insert({
+        owner_id: user.id,
+        name: form.name || "Minha Igreja",
+        slug,
+        pastor_name: form.pastor_name || null,
+        city: form.city || null,
+        state: form.state || null,
+        email: form.email || null,
+        phone: form.phone || null,
+        website: form.website || null,
+        instagram: form.instagram || null,
+        description: form.description || null,
+        plan: "starter",
+        verified: false,
+      }).select().single();
+      error = insertError;
+      if (newChurch) setChurch(newChurch as ChurchData);
+    }
+
     setSaving(false);
     if (error) {
-      setSaveError(`Erro ao salvar: ${error.message}. Verifique as permissões no Supabase (RLS).`);
+      setSaveError(`Erro ao salvar: ${error.message}`);
     } else {
       setChurch((c) => c ? { ...c, ...form } as ChurchData : c);
       setSaved(true);
