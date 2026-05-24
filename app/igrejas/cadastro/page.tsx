@@ -8,7 +8,7 @@ const features = [
   "Gestão completa de eventos",
   "Check-in por QR Code",
   "Cadastro e gestão de membros",
-  "WhatsApp automático",
+  "Comunicados por email",
   "Analytics e relatórios",
   "Suporte especializado",
 ];
@@ -54,7 +54,7 @@ export default function CadastroIgrejaPage() {
               <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
                 <p className="text-sm text-white/60 italic mb-4">
                   "Configuramos o ChurchConnect em 10 minutos. No mesmo dia já estávamos
-                  gerenciando nossos eventos e enviando confirmações pelo WhatsApp."
+                  gerenciando nossos eventos e enviando confirmações por email."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
